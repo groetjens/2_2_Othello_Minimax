@@ -224,8 +224,9 @@ def next_player(board, prev_player):
 
 
 def get_move(strategy, player, board):
-    # call strategy(player, board) to get a move
+    # start timer to allow for max time searching for move
     time_start = time.time()
+    # call strategy(player, board) to get a move
     move = strategy(player, board, DEPTH, time_start)
 
     if is_legal(move, player, board) and is_valid(move):
@@ -269,6 +270,7 @@ def negamax(player, board, depth, time):
 
     # value := -infinity
     current_best = -math.inf
+    # init best_move value with random first move
     best_move = possible_moves[0]
 
     # for each child of node do
@@ -306,11 +308,15 @@ def negamax_heuristics(player, board, depth, start_time):
     current_best = -math.inf
     best_move = possible_moves[0]
 
+    # check to see if there's time left before
+    # going further into the tree
     current_time = time.time()
     if current_time - start_time >= 2:
-        #print("Ran out of time!")
+        # if no time, return current best move
         return best_move
 
+    # for every possible move, move deeper into the tree
+    # and update best_move if found a better move
     for move in possible_moves:
         new_board = make_move(move, player, board[:])
         move_score = -negamax_heuristics(opponent(player), new_board, depth - 1, start_time)
@@ -325,18 +331,18 @@ def negamax_pruning(player, board, depth, start_time, alfa=-math.inf, beta=math.
 
     possible_moves = legal_moves(player, board)
 
-    # print(possible_moves, len(possible_moves) <= 0)
 
     if depth < 1 or len(possible_moves) <= 0:
-        #print("Returning score")
         return heuristic_score(player, board)
 
     current_best = -math.inf
     best_move = possible_moves[0]
 
+    # check to see if there's time left before
+    # going further into the tree
     current_time = time.time()
     if current_time - start_time >= 2:
-        print("Ran out of time!")
+        # if no time, return current best move
         return best_move
 
     for move in possible_moves:
@@ -357,7 +363,7 @@ def negamax_pruning(player, board, depth, start_time, alfa=-math.inf, beta=math.
         # F
         # kan nog worden worden verbeterd door gebruik te maken van transpositie tabellen.
         # https://en.wikipedia.org/wiki/Negamax#Negamax_with_alpha_beta_pruning_and_transposition_tables
-        # Transpositie is een term wat betekent dat er meerdere wegen naar Rome (een gegeven bord positie) leiden.
+        # Transpositie is een term wat betekent dat er meerdere wegen naar Rome (een gegeven bordpositie) leiden.
 
     return best_move
 
