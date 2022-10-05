@@ -29,6 +29,7 @@ This representation has two useful properties:
    between square locations and list indexes.
 2. Operations involving bounds checking are slightly simpler.
 """
+from datetime import datetime
 import math
 import random
 import time
@@ -199,6 +200,9 @@ def play(black_strategy, white_strategy):
         move = get_move(strategy, player, board)
         board = make_move(move, player, board)
 
+        print(print_board(board))
+        print(datetime.now())
+
         player = next_player(board, player)
 
     print(print_board(board))
@@ -221,7 +225,8 @@ def next_player(board, prev_player):
 
 def get_move(strategy, player, board):
     # call strategy(player, board) to get a move
-    move = strategy(player, board, DEPTH)
+    time_start = time.time()
+    move = strategy(player, board, DEPTH, time_start)
 
     if is_legal(move, player, board) and is_valid(move):
         return move
@@ -249,11 +254,11 @@ def score(player, board):
 
 # Play strategies
 
-def random_move(player, board, depth):
+def random_move(player, board, depth, time):
     return random.choice(legal_moves(player, board))
 
 
-def negamax(player, board, depth):
+def negamax(player, board, depth, time):
     possible_moves = legal_moves(player, board)
 
     # wikipedia pseudocode
@@ -292,8 +297,7 @@ def heuristic_score(player, board):
     return score
 
 
-def negamax_heuristics(player, board, depth):
-    start_time = time.time()
+def negamax_heuristics(player, board, depth, start_time):
     possible_moves = legal_moves(player, board)
 
     if depth < 1 or len(possible_moves) <= 0:
@@ -302,23 +306,22 @@ def negamax_heuristics(player, board, depth):
     current_best = -math.inf
     best_move = possible_moves[0]
 
+    current_time = time.time()
+    if current_time - start_time >= 2:
+        #print("Ran out of time!")
+        return best_move
+
     for move in possible_moves:
         new_board = make_move(move, player, board[:])
-        move_score = -negamax_heuristics(opponent(player), new_board, depth - 1)
+        move_score = -negamax_heuristics(opponent(player), new_board, depth - 1, start_time)
 
         if move_score > current_best:
             current_best = move_score
             best_move = move
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    # print(elapsed_time)
-    if elapsed_time >= 2:
-        print("elapsed time: " + str(elapsed_time))
-        return best_move
     return best_move
 
 
-def negamax_pruning(player, board, depth, alfa=-math.inf, beta=math.inf):
+def negamax_pruning(player, board, depth, start_time, alfa=-math.inf, beta=math.inf):
 
     possible_moves = legal_moves(player, board)
 
@@ -331,19 +334,33 @@ def negamax_pruning(player, board, depth, alfa=-math.inf, beta=math.inf):
     current_best = -math.inf
     best_move = possible_moves[0]
 
+    current_time = time.time()
+    if current_time - start_time >= 2:
+        print("Ran out of time!")
+        return best_move
+
     for move in possible_moves:
         new_board = make_move(move, player, board[:])
-        move_score = -negamax_pruning(opponent(player), new_board, depth - 1, -beta, -alfa)
+        move_score = -negamax_pruning(opponent(player), new_board, depth - 1, start_time, -beta, -alfa)
         if move_score > current_best:
             current_best = move_score
             best_move = move
+
+        # alfa beta pruning
+        # onthoudt de beste tak die het algoritme is tegen gekomen en als het resultaat
+        # minder lijkt dan knipt ie de tak af en zoekt ie niet verder.
+
         alfa = max(alfa, current_best)
         if alfa >= beta:
             break
+
+        # F
+        # kan nog worden worden verbeterd door gebruik te maken van transpositie tabellen.
+        # https://en.wikipedia.org/wiki/Negamax#Negamax_with_alpha_beta_pruning_and_transposition_tables
+        # Transpositie is een term wat betekent dat er meerdere wegen naar Rome (een gegeven bord positie) leiden.
 
     return best_move
 
 
 # play (black, white)
-
 play(negamax_pruning, random_move)
